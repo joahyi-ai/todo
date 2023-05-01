@@ -1,11 +1,54 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '@/styles/Home.module.css'
+import Head from "next/head";
+import TodoList from "@/components/TodoList";
+import { useEffect, useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
-const inter = Inter({ subsets: ['latin'] })
+const LOCAL_STORAGE_KEY = "todoApp.todos";
 
 export default function Home() {
+  const todoNameRef = useRef();
+  const initialRender = useRef(true);
+  const [todo, setTodo] = useState([]);
+  useEffect(() => {
+    const storedTodo = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+    if (storedTodo) {
+      setTodo(storedTodo);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return;
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todo));
+  }, [todo]);
+
+  function toggleTodo(id) {
+    const newTodo = [...todo];
+
+    const todos = newTodo.find((todo) => todo.id === id);
+    todos.complete = !todos.complete;
+    setTodo(newTodo);
+  }
+
+  function handleAddTodo(e) {
+    const name = todoNameRef.current.value;
+    if (name) {
+      setTodo((prevTodo) => {
+        return [...prevTodo, { id: uuidv4(), name: name, complete: false }];
+      });
+      todoNameRef.current.value = null;
+    } else {
+      return;
+    }
+  }
+
+  function handleClearTodos() {
+    const newTodos = todo.filter((todo) => todo.complete == false);
+    setTodo(newTodos);
+  }
+
   return (
     <>
       <Head>
@@ -14,110 +57,44 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.js</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
+      <main>
+        <section className="section">
+          <div className="container">
+            {/* TodoList */}
+            <TodoList todo={todo} toggleTodo={toggleTodo} />
+            {/* Input */}
+            <div className="columns">
+              <div className="column is-10">
+                <input
+                  className="input is-primary "
+                  type="text"
+                  placeholder="Todo"
+                  ref={todoNameRef}
+                ></input>
+              </div>
+              {/* AddTodo */}
+              <div className="column">
+                <button onClick={handleAddTodo} className="button is-primary">
+                  Add Todo
+                </button>
+              </div>
+              {/* Clear Todo */}
+              <div className="column">
+                <button
+                  onClick={handleClearTodos}
+                  className="button is-primary"
+                >
+                  Clear Todo
+                </button>
+              </div>
+            </div>
+            {/* Show LeftTodo */}
+            <div className="subtitle">
+              {todo.filter((todo) => !todo.complete).length} left to do
+            </div>
           </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+        </section>
       </main>
     </>
-  )
+  );
 }
